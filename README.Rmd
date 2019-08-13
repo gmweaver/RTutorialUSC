@@ -50,7 +50,7 @@ We will go over this in-person, but if you are already comfortable with R and Rs
 install.packages("devtools")
 ```
 
-3. Install to **RTutorialUSC** R package with devtools by running the following command in the console:
+3. Install **RTutorialUSC** R package with devtools by running the following command in the console:
 
 ```{r, eval = FALSE}
 devtools::install_github("gmweaver/RTutorialUSC")

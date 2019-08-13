@@ -62,7 +62,7 @@ R and Rstudio, feel free to get a head start.
 install.packages("devtools")
 ```
 
-3.  Install to **RTutorialUSC** R package with devtools by running the
+3.  Install **RTutorialUSC** R package with devtools by running the
     following command in the console:
 
 <!-- end list -->
