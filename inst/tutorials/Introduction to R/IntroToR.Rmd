@@ -1,0 +1,1060 @@
+---
+title: "Introduction to R"
+subtitle: "Grand Rounds 08/16/2019"
+tutorial:
+  version: 0.2
+output: 
+  ioslides_presentation
+runtime: shiny_prerendered
+---
+
+<style>
+slides > slide {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+slides > slide:not(.nobackground):after {
+  content: '';
+}
+</style>
+
+```{js, echo=FALSE}
+$(function() {
+   var editor;
+   $('.ace_editor').each(function( index ) {
+     editor = ace.edit(this);
+     editor.setFontSize("24px");
+   });
+})
+```
+
+```{r setup, include=FALSE}
+library(learnr)
+library(RTutorialUSC)
+library(dplyr)
+library(readr)
+library(haven)
+library(ggplot2)
+library(shiny)
+data("dbts_df")
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Reading Data Into R
+
+## Reading Data: Finding Files in R
+
+To load data, first tell R where the file is on your computer. 
+
+But to do that, we have to know where we are...
+
+- `getwd()` returns current directory (i.e. folder) that R is looking at
+- `list.files("folder location")` returns all files in "folder location"
+- `setwd()` change folder R is looking at
+- `file.exists("folder location")` checks if a file exists in "folder location"
+
+```{r file-functions, exercise=TRUE, exercise.lines=5}
+getwd()
+setwd("C:/Users/gmweaver/Desktop/usc_project/")
+list.files()
+list.files("data")
+```
+
+## Reading Data: Loading CSV Files into R
+
+`read.csv()` reads CSV files into R. 
+
+In addition to the CSV file location, we may specify the following parameters:
+
+- `header`: Indicates if first row of CSV has variable names
+- `stringsAsFactors`: Whether columns with non-numeric data should be treated as character or factor variables (to be discussed later)
+
+```{r load-csv, exercise=TRUE, exercise.lines=5}
+setwd("c:/users/gmweaver/desktop/usc_project")
+diabetes <- read.csv(file = "data/diabetes.csv")
+```
+
+## Reading Data: Loading CSV Files into R
+
+What happened when you ran the command?
+
+```{r load-csv2, eval=FALSE, echo=TRUE}
+diabetes <- read.csv(file = "data/diabetes.csv")
+```
+
+1) `read.csv()` read a file called `diabetes.csv` into R
+    - R functions accept arguments (i.e. `file=`, `header=`)
+        - Arguments are either required or have default (modifiable) values
+        - `file=` is a required argument
+        - `header=` has a default value of `TRUE`, so we didn't need to specify
+
+2) The data was assigned, `<-`, to a variable called `diabetes`
+    - Use `<-` to assign values to variables
+    - Use `=` to set argument values in functions
+    - The `diabetes` variable is an R object can now be used to access, transform, and analyze the data
+
+## An aside: R Documentation
+
+Q: How did we know what arguments to use in `read.csv()`?
+
+A: By running the command `?read.csv`, RStudio returns a help file...
+
+- **Description**: high-level overview of what the function does
+
+- **Usage**: how to use the function and what arguments it accepts
+
+```{r docs, eval=FALSE, echo=TRUE}
+read.csv(file, header = TRUE, sep = ",", quote = "\"",
+         dec = ".", fill = TRUE, comment.char = "", ...)
+```
+
+- **Arguments**: more detailed information about each argument
+
+- **Details**: additional description of the function and any information deemed important for the user
+
+- **Value**: describes what the function returns
+
+- **Examples**: self-containted snippets of R code to test using the function
+
+## Reading Data: Loading Other File Types into R
+
+Data comes in many shapes and sizes. Luckily, a number of R packages are available to handle the most common file formats.
+
+But first, what is an **R package**?
+
+- As R became more popular, users needed a way to share code
+- R packages solved this problem by providing a standardized process to develop and distribute R code
+
+Use `install.packages("package name")` to install an R package
+
+- `library(package_name)` loads the functions into the R session
+- Note: Run `library(package_name)` every time you start a new R session
+
+## Reading Data: Loading Other File Types into R
+
+R Package Example: Reading CSV files using functions from other packages
+
+- `readr`: Part of the R Tidyverse
+- `data.table`: Improved efficiency when manipulating larger data sets
+- `readxl`: Functions to read Excel (.xls, .xlsx) files
+
+As an example, we can install the `readr` package to read the diabetes CSV:
+
+```{r load-csv3, eval=FALSE, echo=TRUE}
+install.packages("readr")
+library(readr)
+```
+
+```{r load-csv4, exercise=TRUE, exercise.lines=5}
+setwd("c:/users/gmweaver/desktop/usc_project")
+diabetes <- read_csv(file = "data/diabetes.csv")
+```
+
+## Reading Data: Loading Other File Types into R
+
+The `haven` package can read/write SAS and STATA data sets!
+
+Reading STATA `.dta` files only requires a small modification to the previous code
+
+```{r load-stata, eval=FALSE, echo=TRUE}
+install.packages("haven")
+library(haven)
+diabetes <- read_stata(file = "data/diabetes.dta")
+```
+
+```{r load-stata2, exercise=TRUE, exercise.lines=5}
+setwd("c:/users/gmweaver/desktop/usc_project")
+diabetes <- read_csv(file = "data/diabetes.csv")
+write_dta(diabetes, path = "data/diabetes.dta")
+diabetes <- read_stata(file = "data/diabetes.dta")
+```
+
+# Manipulating Data in R
+
+## Manipulating Data: R Objects
+
+"Everything in R is an object" Chambers (2008), but what does this mean...
+
+- Objects are data structures that we can manipulate
+- We refer to these data structures by using variables (i.e `diabetes`)
+- Objects are created by assigning values, `<-`, to a variable
+
+```{r first-R-object, exercise = TRUE}
+# Create a variable called x and assign it the value "Hello World!"
+x <- "Hello World!"
+x
+
+# Try creating a variable called 'y' and assign it the value 10
+
+# Change the value of x to pi
+
+```
+
+## Manipulating Data: 'Atomic' Data Types
+
+Every R object can be broken down into a set of 'atomic' R objects, sometimes referred to as data types. The three we will primarily work with are:
+
+- numeric (2, 3.14)
+- character ("positive", "los angeles")
+- logical (TRUE, FALSE)
+
+To determine the type of an R object, use the `class()` function.
+
+```{r data-types, exercise = TRUE} 
+# numeric, L is used to indicate that this is an integer
+a_double <- 6.2
+a_int <- 10L
+
+# character
+city <- "los angeles"
+
+# logical (TRUE or FALSE)
+is_it_true <- FALSE
+
+# check type of variables
+class(a_double)
+class(a_int)
+class(city)
+class(is_it_true)
+```
+
+## Manipulating Data: Data Structures
+
+The primary data structures that you will use on an everyday basis:
+
+- Vectors
+- Matrices
+- Lists
+- Data Frames (a special type of list)
+
+Each data structure has a set of functions that we can use to:
+
+- Access elements
+- Add elements
+- Modify elements
+- Delete elements
+
+Our primary focus will be on **Data Frames**
+
+## Manipulating Data: Vectors
+
+To use data frames, we first need to understand vectors
+
+  - Vector: sequence of numbers, characters, **OR** TRUE/FALSE values
+  - Most common way to create a vector is the `c()` function
+  - `length()` returns how many values are stored in a vector
+  - `typeof()` returns the type of data stored in a vector
+  
+```{r vectors, exercise = TRUE}
+# A vector to store the age of everyone
+age <- c(25, 30, 47, 38, 29, 72, 22, 55)
+
+# How many age values are stored in age
+length(age)
+
+# What type of data is in age
+class(age)
+```
+
+## Manipulating Data: Vectors (Accessing)
+
+Two primary ways to access data in a vector, both use `[]` to access
+
+1) By providing the position(s) of the elements in the vector
+    - `my_subvec <- myvec[c(2, 10, ...)]`
+    - Use another vector to specify the position(s)!
+    
+2) By logical subsetting
+    - `my_subvec <- myvec[c(TRUE, FALSE, ...)]`
+    - Example: I want all values that are less than 40
+
+**Values by position**
+
+```{r vectors2, exercise = TRUE}
+# A vector to store the age of everyone
+age <- c(25, 30, 47, 38, 29, 72, 22, 55)
+
+# Get the values stored at positions 3, 4, and 7
+subset_by_position <- age[c(3, 4, 7)]
+```
+
+**Values by logical subsetting**
+
+```{r vectors3, exercise = TRUE}
+# A vector to store the age of everyone
+age <- c(25, 30, 47, 38, 29, 72, 22, 55)
+
+# Determine what values are less than 40
+is_lt_40 <- age < 40
+is_ls_40
+
+# Get values that are less than 40
+
+# Use the TRUE/FALSE vector we created
+subset_logical <- age[is_lt_40]
+
+# Compute TRUE/FALSE vector directly in []
+subset_logical2 <- age[age < 40]
+```
+
+## Manipulating Data: Vectors (Modifying)
+
+The same methods used to access values can be used to change values
+
+```{r vectors4, exercise = TRUE}
+# A vector to store the age of everyone
+age <- c(25, 30, 47, 38, 29, 72, 22, 55)
+
+# Change the values at positions 3, 4, and 7 to zero
+age[c(3, 4, 7)] <- 0
+
+# Get all values that are less than 40 and set to zero
+age <- c(25, 30, 47, 38, 29, 72, 22, 55)
+age[age < 40] <- 0
+```
+
+To add elements to the end (or middle/beginning), use `c()` or `append()`
+
+```{r vectors5, exercise = TRUE}
+a_vec <- c(7, 18, 22.2, -4, 0)
+more_num <- c(10, 8, 12)
+
+# add more_num to end of a_vec
+c(a_vec, more_num)
+
+# add more_num after 2nd element in a_vec
+append(a_vec, more_num, after = 2)
+```
+
+## Manipulating Data: Vectorization
+
+A number of operations in R are 'vectorized', vectorization tends to lead to
+
+- Cleaner and more succinct code
+- A more efficient implementation of the operations 
+
+All the operations below are 'vectorized'
+
+```{r vectorization, exercise = TRUE}
+a_vec <- c(7, 18, 22.2, -4, 0)
+
+# add 10 to each element in a_vec
+a_vec + 10 
+
+# square each element in a a_vec 
+a_vec^2 # square each element
+
+# test whether each element in a_vec is < 0
+a_vec < 0
+
+# access all elements with value < 0
+a_vec[a_vec < 0] 
+```
+
+## Manipulating Data: Data Frames
+
+A `data.frame` is used to store and analyze rectangular data
+
+  - Similar to an Excel sheet: 
+    - Rows = Observations 
+    - Columns = Variables
+    
+  - Several R packages have extended the functionality of `data.frame`
+    - `tibble`: A `data.frame` with additional features from the Tidyverse
+    - `data.table`: Improved efficiency to manipulate large data sets
+    
+  - All of the functions used to read data so far end up creating data frames!
+  - For the rest of this discussion, we will use the `tibble` form produced by `readr`
+  
+*By definition, data frames are just a list of equal-length vectors*
+
+## Manipulating Data: Data Frames (Structure)
+
+After reading in data, it is important to verify that the data was read correctly
+
+  - Use `head(df)` to print out the first few rows of the data
+  - `dim(df)`, `nrow(df)`, and `ncol(df)` to inspect the dimensions
+  - `typeof(df)`, `str(df)`, and `class(df)` provide additional info
+  - Use `str()` to verify variable type (i.e. numeric or character)
+
+```{r data-frames, exercise = TRUE, exercise.lines=15}
+# Print first 5 rows
+head(dbts_df)
+
+# Dimensions of the data set
+dim(dbts_df)
+nrow(dbts_df)
+ncol(dbts_df)
+
+# Additional (helpful) information
+str(dbts_df)
+```
+
+## Manipulating Data: Data Frames (Accessing)
+
+Three primary ways to access subsets of a `data.frame`
+
+1) By providing row number(s) and/or column number(s)
+    - `mydf[c(3, 5, ...), c(1, 4, ...)]`
+  
+2) By providing row names(s) and/or column name(s)
+    - `mydf[c("row1", "row2"), "mycol1"]`
+    - To access a single column, can use
+        - `mydf$column_name`, returns vector
+        - `mydf[['column_name']]`, returns vector
+        - `mydf['column_name']`, returns data frame
+  
+3) By logical subsetting
+    - `mydf[c(TRUE, FALSE, ...), c(FALSE, TRUE, ...)]`
+    - Example: Get all rows where the person is at least 50 years old
+
+- If rows/columns not specified, R returns ALL rows/columns by default
+    - `mydf[, c(1, 4)]` returns all rows from columns 1 and 4
+
+## Manipulating Data: Data Frames (Accessing)
+
+**Get data by row/column position**
+
+```{r data-frames2, exercise = TRUE, exercise.lines=5}
+# Return the rows 2, 5, and 10 and only the 3rd column
+dbts_df[c(2, 5, 10), 3]
+```
+
+**Get data by row/column name**
+
+```{r data-frames3, exercise = TRUE, exercise.lines=5}
+# Return all rows from the glucose and diabetes variables
+dbts_df[, c("glucose", "diabetes")]
+
+# Return only the diabetes variable using $
+dbts_df$diabetes
+```
+
+**Get data by logical vectors**
+
+```{r data-frames4, exercise = TRUE, exercise.lines=20}
+### Return all rows where age > 40 and diabetes is "pos" ###
+
+# Who is over 40
+over40 <- dbts_df$age > 40
+
+# Who is diabetic
+is_diabetic <- dbts_df$diabetes == "pos"
+
+# Who is over 40 AND diabetic
+over40_diabetic <- over40 & is_diabetic
+
+# Get all observations that are over 40 and diabetic
+dbts_df[over40_diabetic, ]
+
+# Same results in one line
+dbts_df[dbts_df$age > 40 & dbts_df$diabetes == "pos", ]
+```
+
+## Logical Operators
+
+- <, >, <=, >=
+- == (equal)
+- != (not equal)
+- || (OR), 
+- \| (OR, vectorized, element-wise)
+- && (AND), 
+- & (AND, vectorized, element-wise)
+
+```{r logical-operators, exercise=TRUE}
+# Create two numeric variables, x and y, assign them values
+x <- 3
+y <- 7
+# Create two Boolean variables, t and f, assign them values
+t <- TRUE
+f <- FALSE
+# Compare numeric values using logic statements
+y > x
+y == x
+# Compare &&, ||
+t && f
+t || f
+```
+
+**Compare && and || to & and |**
+
+- && and || return scalar value using only 1st element of each object being compared
+- & and | return logical vector
+
+```{r logical-vector, exercise = TRUE}
+c(TRUE, FALSE, TRUE) && c(TRUE, TRUE, FALSE)
+c(TRUE, FALSE, TRUE) & c(TRUE, TRUE, FALSE)
+```
+
+## Manipulating Data: Data Frames (Modifying)
+
+Similar syntax can be used to modify a `data.frame`:
+
+**Add a new variable (column) to a data frame, mydf$new_variable_name**
+```{r data-frames5, exercise = TRUE, exercise.lines=5}
+# Create variable is_diabetic (TRUE = "pos", FALSE = "neg")
+dbts_df$is_diabetic <- dbts_df$diabetes == "pos"
+```
+
+**Modify an existing variable in a data frame**
+```{r data-frames6, exercise = TRUE, exercise.lines=5}
+# Change is_diabetic to numeric (TRUE = 1, FALSE = 0)
+dbts_df['is_diabetic'] <- as.numeric(dbts_df$diabetes == "pos")
+```
+
+**Remove a variable from a a data frame, set to NULL**
+```{r data-frames7, exercise = TRUE, exercise.lines=5}
+# Remove is_diabetic from data frame
+dbts_df$is_diabetic <- NULL
+```
+
+## An aside: dplyr, readr, ..., the Tidyverse
+
+The Tidyverse is a set of R packages intended to make data manipulation and analysis
+
+`readr`, `readxl`, `haven`
+
+- Provide a number of functions to read data from different sources
+
+`dplyr`
+
+- Provides a clean (SQL-like) syntax to shape your data exactly how you need it
+- Naturally extends to when your data lives in multiple data sets
+- `tidyr` extends functionality to ensure you have 'tidy' data
+
+`tibble`
+
+- An improved `data.frame` that you have already been using through this section
+
+
+
+# Summarizing Data in R
+
+## Summarizing Data: Summary Statistics + Plots
+
+**For categorical variables:**
+
+- Summary statistics
+    - Frequency counts 
+    - Proportions
+    
+- Plots
+    - Bar chart
+
+**For continuous variables:**
+
+- Summary statistics
+    - Measures of centrality (mean, median, mode)
+    - Spread/variation (variance, standard deviation, range)
+    - Quantiles/percentiles (min, max, 25% , 50% (median), etc..)
+    
+- Plots
+    - Histogram
+    - Boxplot (+ individual points)
+
+## An Aside: The ggplot2 package
+
+For the plots in this tutorial, we will be using the popular R package `ggplot2`
+
+Base R does contain plot functions, but....
+
+- `ggplot2` allows for quick creation of visually appealing plots (they look nice)
+- "Easy" to use interface with lots of customization
+
+Every ggplot starts with `ggplot(data, aes(x=, y=, ...))` to define
+
+- What `data` to use
+- Which variables in `data` to use and how they will be used
+- ggplot allows for us to add to the plot in 'layers'
+    - `ggplot(...) + geom_point(...) + labs(...) + ...`
+    - We don't have to specify the details all in one function
+
+## Summarizing Data: Categorical Variables
+
+`table()` is the standard for tabulating counts of each unique value in a variable
+
+- Use extends to cross-tabulating two variables (i.e. contingency table)
+
+`prop.table()` can be used to obtain proportions
+
+```{r cat-desc, exercise = TRUE, exercise.lines=10}
+# Find counts of diabetic / non-diabetic
+diabetic_counts <- table(dbts_df$diabetes)
+diabetic_counts
+
+# Get proportions from counts
+diabetic_prop <- prop.table(diabetic_counts)
+diabetic_prop
+```
+
+## Summarizing Data in R: Categorical Variables
+
+`geom_bar()` is used to create a bar chart for categorical variables
+
+- For a bar chart, we need to tell `geom_bar()` what variable is on the x-axis
+  - `aes()` is used to specify this information
+
+```{r cat-plot, exercise = TRUE, exercise.lines=3}
+# Create bar chart of diabetes variable
+ggplot(data = dbts_df, aes(x = diabetes)) + geom_bar()
+```
+
+## Summarizing Data: Continuous Variables
+
+- Measures of centrality
+    - `mean()`, `median()`, `mode()`
+
+- Spread / Variation
+    - `var()`, `sd()`, `range()`
+    
+- Quantiles / Percentiles
+    - `min()`, `max()`, `quantile()`
+    
+```{r cont-desc, exercise = TRUE, exercise.lines=15}
+# Compute mean, median, mode of glucose
+mean(dbts_df$glucose)
+median(dbts_df$glucose)
+mode(dbts_df$glucose)
+
+# Compute variation of glucose
+var(dbts_df$glucose)
+sd(dbts_df$glucose)
+range(dbts_df$glucose)
+
+# Compute quantiles of glucose
+min(dbts_df$glucose)
+max(dbts_df$glucose)
+quantile(dbts_df$glucose, probs = c(0.25, 0.75))
+
+# Summary function computes multiple statistics
+summary(dbts_df$glucose)
+```
+
+## Summarizing Data: Continuous Variables
+
+- `geom_histogram()` is used to generate a histogram
+- `geom_boxplot()` is used to generate a boxplot
+    - Using `y=` creates a vertical boxplot, `x=` creates a horizontal boxplot
+    - We can overlay data points on boxplot with `geom_jitter()`
+    
+```{r cont-plot, exercise = TRUE, exercise.lines=10}
+# Histogram of glucose
+ggplot(dbts_df, aes(x = glucose)) + geom_histogram(binwidth = 10)
+
+# Boxplot of glucose
+ggplot(dbts_df, aes(y = glucose)) + geom_boxplot()
+
+# Boxplot of glucose + data points
+ggplot(dbts_df, aes(x = factor(0), y = glucose)) + geom_boxplot() + 
+  geom_jitter(shape = 16, position = position_jitter(0.2), alpha = .3)
+```
+
+## Summarizing Data: Bivariate Analyses
+
+The next step is to analyze pairwise relationships between variables
+
+**Continuous vs. Continuous:**
+
+- Correlation: Strength of the linear relationship between two variables
+- Scatterplot: Bivariate point plot to visualize relationship
+
+**Continuous vs. Categorical:**
+
+- Stratified Boxplot: Boxplot of continuous variable for each level of categorical
+
+**Categorical vs. Categorical:**
+
+- Contingency Table: Cross-tabulate counts for each unique combination of the two categorical variables
+
+## Summarizing Data: Continuous vs. Continuous
+
+The correlation between two variables can be found with the `cor()` function
+
+```{r corr, exercise = TRUE, exercise.lines=3}
+cor(dbts_df$glucose, dbts_df$insulin)
+```
+
+`corrplot()` from the package R *corrplot* makes it easy to visualize the correlation between all variables 
+
+```{r corr2, exercise = TRUE, exercise.lines=3}
+corrplot(cor(dbts_df[, -9]), type = "lower")
+```
+
+## Summarizing Data: Continuous vs. Continuous
+
+`geom_point()` creates a scatterplot between two continuous variables
+
+```{r scatter-plot, exercise = TRUE, exercise.lines=3}
+ggplot(dbts_df, aes(x = glucose, y = insulin)) + geom_point()
+```
+
+A trend line can be added by using `geom_smooth()`
+
+```{r scatter-plot2, exercise = TRUE, exercise.lines=3}
+# Scatterplot with Linear Trend
+ggplot(dbts_df, aes(x = glucose, y = insulin)) + geom_point() +
+  geom_smooth(method = "lm")
+```
+
+```{r scatter-plot3, exercise = TRUE, exercise.lines=3}
+# Scatterplot with LOESS
+ggplot(dbts_df, aes(x = glucose, y = insulin)) + geom_point() +
+  geom_smooth(method = "loess")
+```
+
+## Summarizing Data: Continuous vs. Categorical
+
+Group-specific means can be computed with the `aggregate()` function:
+
+```{r group-means, exercise = TRUE, exercise.lines=3}
+aggregate(dbts_df[, -9], list(dbts_df$diabetes), mean)
+```
+
+Same result, different syntax:
+
+```{r group-means2, exercise = TRUE, exercise.lines=3}
+aggregate(. ~ diabetes, dbts_df, mean)
+```
+
+`geom_boxplot()` can be used to create side-by-side boxplots based on a group:
+
+```{r group-boxplot, exercise = TRUE, exercise.lines=3}
+ggplot(dbts_df, aes(y = glucose, x = diabetes, fill = diabetes)) + 
+  geom_boxplot()
+```
+
+## Summarizing Data: Categorical vs. Categorical
+
+`table()` can be used to create a contingency table
+
+Dichotomize glucose (< 126 vs. >= 126), create table of glucose vs. diabetes
+
+  - `ifelse` is a shorthand to conditionally assign values based on a logical vector
+  - `ifelse(c(TRUE, FALSE), "Value if TRUE", "Value if FALSE")`
+
+```{r contingency-table, exercise = TRUE, exercise.lines=8}
+# Dichotomize glucose at 126
+high_glucose <- ifelse(dbts_df$glucose >= 126, ">= 126", "< 126")
+
+# Contingency table of age vs diabetes
+table(high_glucose, dbts_df$diabetes)
+```
+
+`prop.table()` can again be used to obtain proportions
+
+  - `margin=` option used to compute percentages along rows or columns
+  - 1 = rows, 2 = columns
+
+```{r prop-table, exercise = TRUE, exercise.lines=8}
+# Dichotomize glucose at 126
+high_glucose <- ifelse(dbts_df$glucose >= 126, ">= 126", "< 126")
+
+# Contingency table of age vs diabetes
+prop.table(table(high_glucose, dbts_df$diabetes))
+```
+
+Suppose we want to predict if someone has diabetes...how well does `high_glucose` classify people?
+
+```{r glucose-classify, exercise = TRUE, exercise.lines=20}
+# Dichotomize glucose at 126
+high_glucose <- ifelse(dbts_df$glucose >= 126, ">= 126", "< 126")
+
+# Compute sensitivity and specificity
+prop.table(table(high_glucose, dbts_df$diabetes), margin = 2)
+
+# Make sure we are getting the right answer
+sensitivity <- 176 / (176 + 92)
+specificity <- 379 / (379 + 121)
+
+# Compute positive predictive value and negative predictive value
+prop.table(table(high_glucose, dbts_df$diabetes), margin = 1)
+
+# Make sure we are getting the right answer
+ppv <- 176 / (176 + 121)
+npv <- 379 / (379 + 92)
+```
+
+# Hypothesis Testing in R
+
+## Hypothesis Testing: 2-Sample t-test
+
+A two-sample t-test is used to test if there is a mean difference in a continuous outcome between two groups
+
+  - The outcome is assumed to be normally distributed in each group
+ 
+  $$y_1 \sim N(\mu_1, \sigma^2_1)$$
+  
+ $$y_2 \sim N(\mu_2, \sigma^2_2)$$
+
+  - The null and alternative hypotheses to test for a difference in the means are:
+  
+  $$H_0: \mu_1=\mu_2$$
+
+ $$H_1: \mu_1 \ne \mu_2 \space (two-sided)$$
+ $$H_1: \mu_1 > \mu_2 \space (one-sided)$$
+ 
+$$H_1: \mu_1 < \mu_2 \space (one-sided)$$
+
+  - The test statistic follows the Student's t distribution and is computed as:
+  
+  $$T=\frac{\bar{x}_1-\bar{x}_2}{s_p\sqrt{\frac{1}{n_1} + \frac{1}{n_2}}} \space (equal \space variance)$$
+
+$$T=\frac{\bar{x}_1-\bar{x}_2}{\sqrt{\frac{s^2_1}{n_1} + \frac{s^2_2}{n_2}}} \space (unequal \space variance)$$
+
+## Hypothesis Testing: 2-Sample t-test
+
+Below is a small simulation that simulates an outcome in two groups:
+
+- Use the inputs to change the mean and standard deviation (SD)
+- Results of two-sample t-test are shown below stratified boxplot
+
+```{r, context="render", echo = FALSE}
+
+shinyUI(fluidPage(
+  sidebarPanel(
+    helpText("Group 1:"),
+    numericInput("mu1", label = "Mean", value = 0, step = 0.1),
+    numericInput("sd1", label = "SD", value = 1, step = 0.1),
+    helpText("Group 2:"),
+    numericInput("mu2", label = "Mean", value = 0, step = 0.1),
+    numericInput("sd2", label = "SD", value = 1, step = 0.1)
+  ),
+  mainPanel(
+    plotOutput("boxPlot"),
+    tableOutput("ttestTable")
+  )
+))
+```
+
+```{r, context="server"}
+
+dat <- reactive({
+  n <- 200
+  y_group1 <- rnorm(n, input$mu1, input$sd1)
+  y_group2 <- rnorm(n, input$mu2, input$sd2)
+  dat <- data.frame(
+    group = c(rep("Group 1", n), rep("Group 2", n)), 
+    y = c(y_group1, y_group2)
+  )
+})
+
+output$boxPlot <- renderPlot({
+    ggplot(dat(), aes(x = group, y = y, fill = group)) + 
+      geom_boxplot()
+})
+
+output$ttestTable <- renderTable({
+    dat_cur <- dat()
+    if (input$sd1 == input$sd2) {
+      ttest <- t.test(y ~ group, dat_cur, var.equal = TRUE)
+    } else {
+      ttest <- t.test(y ~ group, dat_cur, var.equal = FALSE)
+    }
+
+    results <- data.frame(
+      mean_grp1 = mean(dat_cur$y[dat_cur$group == "Group 1"]),
+      mean_grp2 = mean(dat_cur$y[dat_cur$group == "Group 2"]),
+      sd_grp1 = sd(dat_cur$y[dat_cur$group == "Group 1"]),
+      sd_grp2 = sd(dat_cur$y[dat_cur$group == "Group 2"]),
+      t_value = ttest$statistic,
+      p_value = ttest$p.value
+    )
+    colnames(results) <- c(
+      "Mu1", 
+      "Mu2", 
+      "SD1", 
+      "SD2", 
+      "T", 
+      "p-value"
+    )
+    results
+}, digits = 4)
+```
+
+## Hypothesis Testing: 2-Sample t-test
+
+Returning back to the diabetes data set...
+
+`t.test()` is used to test if mean glucose differs by diabetes status
+
+- There are two ways we can specify:
+    1) `t.test(y ~ group, data = dat)`
+    2) `t.test(y[grp == "Group 1"], y[grp == "Group 2"])`
+
+```{r ttest-glucose, exercise = TRUE, exercise.lines=12}
+# 2-sample t-test for glucose by diabetes status
+
+# Using a formula
+t.test(glucose ~ diabetes, data = dbts_df)
+
+# Passing each outcome separately by group
+t.test(
+  dbts_df$glucose[dbts_df$diabetes == "pos"], 
+  dbts_df$glucose[dbts_df$diabetes == "neg"]
+)
+```
+
+## Hypothesis Testing: 2-Sample t-test
+
+Let's focus on the type of object returned by `t.test()`...a **List**
+
+Lists are 'generic' vectors that can be composed of different R objects.
+
+- A `data.frame` is a List object composed of vectors
+  
+Investigate the object returned by `t.test()`:
+
+```{r ttest-glucose2, exercise = TRUE, exercise.lines=22}
+# 2-sample t-test for glucose by diabetes status
+result <- t.test(glucose ~ diabetes, data = dbts_df)
+
+# What is the structure of result
+str(result)
+
+# Accessing elements in a list is the same as getting columns in a data.frame
+
+# Using the lst$element_name
+result$statistic
+
+# Using lst[['element_name']
+result[["statistic"]]
+
+# To return a sublist [c("elem1", "elem2")]
+result[c(1, 3)]
+result[c("statistic", "p.value")]
+
+# In some cases, it makes sense to return a vector
+unlist(result[c("statistic", "p.value")])
+```
+
+## Hypothesis Testing: Chi-square Test
+
+A Chi-Square test allows us to test whether there is an association between two categorical variables
+
+- The null and alternative hypotheses can be expressed as:
+    - $H_0$: There is no association between the categorical variables
+    - $H_1$: There is an association between the categorical variables
+    
+- The test statistic for the Chi-Square test compares the observed and expected counts:
+
+$$\chi^2=\sum \frac{(O-E)^2}{E}$$
+
+`chisq.test()` is used to compute a Chi-Square test in R
+
+- Below, we look at `high glucose` vs. `diabetes status`
+    
+```{r chisq-test, exercise = TRUE, exercise.lines=16}
+# Chi-Square test for high glucose and diabetes status
+high_glucose <- dbts_df$glucose > 126
+chisq.test(high_glucose, dbts_df$diabetes)
+
+# Same test, different syntax
+chisq_result <- chisq.test(table(high_glucose, dbts_df$diabetes))
+
+# Get observed counts and expected counts
+observed <- chisq_result$observed
+expected <- chisq_result$expected
+
+# What type of data structures are observed and expected?
+class(observed)
+class(expected)
+```
+
+## Hypothesis Testing: Linear Regression
+
+Linear regression is a common method to model the association of a continuous outcome as a linear function of a set of predictors
+
+The general model is expressed as:
+
+$$Y = \beta_0+\beta_1 X_1+\beta_2X_2+...+\beta_pX_p+\epsilon$$
+$$\epsilon \sim N(0, \sigma^2)$$
+`lm()` is used to fit linear regression models in R
+
+  - As with `t.test()`, the model can be specified two different ways
+  - `lm(y ~ x1 + x2 + ..., data = dat)`
+  - `lm(y = y, x = x)`, `x` must be a Matrix
+  
+Let's show that `lm()` and `t.test()` can lead to the same results:
+
+```{r lm-glucose, exercise = TRUE, exercise.lines=5}
+# 2-sample t-test for glucose by diabetes status
+result_ttest <- t.test(
+  glucose ~ diabetes, 
+  data = dbts_df, 
+  var.equal = TRUE
+)
+
+# Fit linear regression model of glucose on diabetes status
+result_lm <- lm(glucose ~ diabetes, data = dbts_df)
+
+# View results of regression with summary() function
+summary(result_lm)
+
+# Get test statistic for t-test
+teststat_ttest <- result_ttest$statistic
+
+# Get test statistic for lm
+teststat_lm <- summary(result_lm)$coefficients[2, 3]
+
+# Are they the same?
+all.equal(abs(teststat_ttest), abs(teststat_lm), check.attributes = FALSE)
+```
+
+## Hypothesis Testing: Linear Regression
+
+Many statistical procedures have additional functions to help parse results
+
+The object returned by `lm()` can be used with the following functions:
+
+  - `summary()` summarize the results of the model
+  - `coef()` to return the coefficients from the model
+  - `residuals()` to return the residuals from the model
+  - `predict()` to use the model make predictions on a new set of data
+  - `plot()` plots to assess model fit and assumptions
+
+```{r lm-glucose2, exercise = TRUE, exercise.lines=35}
+# Fit linear regression model of glucose on diabetes status
+result_lm <- lm(glucose ~ diabetes, data = dbts_df)
+
+# Model fit plots
+plot(result_lm)
+```
+
+```{r lm-glucose3, exercise = TRUE, exercise.lines=35}
+# Fit linear regression model of glucose on diabetes status
+result_lm <- lm(glucose ~ diabetes, data = dbts_df)
+
+# Create our own residuals vs fitted plot
+
+# Get residuals and fitted (predictions)
+resids <- residuals(result_lm)
+fitted <- predict(result_lm, newdata = dbts_df)
+
+# Create data frame
+model_results <- data.frame(
+  resids = resids,
+  fitted = fitted
+)
+
+# Compute mean of residuals at fitted values
+mean_results <- aggregate(
+  resids ~ fitted, 
+  data = model_results, 
+  mean
+)
+
+ggplot(model_results, aes(x = fitted, y = resids)) + 
+  geom_point() +
+  geom_line(data = mean_results, col = "red") +
+  labs(x = "Fitted", y = "Residuals") +
+  ggtitle("Plot of fitted vs. residuals")
+```
+
+## Summary
+
+In this tutorial, you learned how to:
+
+  - Read data from various data sources
+  - Manipulate data in various froms
+  - Compute summary statistics and generate plots to visualize your data
+  - Conduct statistical analyses and use the results returned
