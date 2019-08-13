@@ -2,7 +2,7 @@
 title: "Introduction to R"
 subtitle: "Grand Rounds 08/16/2019"
 tutorial:
-  version: 0.2
+  version: 0.3
 output: 
   ioslides_presentation
 runtime: shiny_prerendered
@@ -36,9 +36,34 @@ library(readr)
 library(haven)
 library(ggplot2)
 library(shiny)
+library(corrplot)
 data("dbts_df")
 knitr::opts_chunk$set(echo = FALSE)
 ```
+
+## Goals of this Tutorial
+
+<center>
+To change your feelings about R from...
+
+![](IntroToR_files/images/scared_dog_R.webp)
+</center>
+
+## Goals of this Tutorial
+
+<center>
+To...
+
+![](IntroToR_files/images/chilling_dog_R.gif)
+</center>
+
+## Goals of this Tutorial
+
+- How to use RStudio
+- How to read data into R
+- How to manipulate data in R
+- How to explore data in R through summarization and plots
+- How to conduct statistical analyses in R
 
 # Reading Data Into R
 
@@ -186,7 +211,7 @@ x
 
 # Try creating a variable called 'y' and assign it the value 10
 
-# Change the value of x to pi
+# Change the value of x to pi (no quotes)
 
 ```
 
@@ -216,6 +241,27 @@ class(a_double)
 class(a_int)
 class(city)
 class(is_it_true)
+```
+
+Sometimes when we import data, it is not of the right type
+
+- Coercion functions exist to help convert between types
+- The general form is `as.type()` as shown below
+- `is.type()` can be used to check if a variable is certain type
+
+```{r data-types2, exercise = TRUE, exercise.lines=14} 
+i_should_be_numeric <- "20"
+
+# Use is.numeric() to convert to a number
+ah_thats_better <- as.numeric(i_should_be_numeric)
+is.numeric(ah_thats_better)
+
+# Exercise: What happens if you try to convert say to numeric
+a_word <- "hello"
+
+# Exercise: What happends if you convert a logical to numeric? character?
+im_true <- TRUE
+im_false <- FALSE
 ```
 
 ## Manipulating Data: Data Structures
@@ -254,6 +300,9 @@ length(age)
 
 # What type of data is in age
 class(age)
+
+# Try to create a vector with the following elements: 20, "CA", TRUE
+
 ```
 
 ## Manipulating Data: Vectors (Accessing)
@@ -276,6 +325,9 @@ age <- c(25, 30, 47, 38, 29, 72, 22, 55)
 
 # Get the values stored at positions 3, 4, and 7
 subset_by_position <- age[c(3, 4, 7)]
+
+# Exercise: Get all values EXCEPT the last one in age (55)
+
 ```
 
 **Values by logical subsetting**
@@ -295,7 +347,48 @@ subset_logical <- age[is_lt_40]
 
 # Compute TRUE/FALSE vector directly in []
 subset_logical2 <- age[age < 40]
+
+# Exercise: Get all values that are larger than square root of 27
+# Hint: R has a function called sqrt() to compute the sqrt of a number
+
+
 ```
+
+## An aside: Logical Operators
+
+- <, >, <=, >=
+- == (equal)
+- != (not equal)
+- || (OR), 
+- \| (OR, vectorized, element-wise)
+- && (AND), 
+- & (AND, vectorized, element-wise)
+
+```{r logical-operators, exercise=TRUE}
+# Create two numeric variables, x and y, assign them values
+x <- 3
+y <- 7
+# Create two Boolean variables, t and f, assign them values
+t <- TRUE
+f <- FALSE
+# Compare numeric values using logic statements
+y > x
+y == x
+# Compare &&, ||
+t && f
+t || f
+```
+
+**Compare && and || to & and |**
+
+- && and || return scalar value using only 1st element of each object being compared
+- & and | return logical vector
+
+```{r logical-vector, exercise = TRUE}
+c(TRUE, FALSE, TRUE) && c(TRUE, TRUE, FALSE)
+c(TRUE, FALSE, TRUE) & c(TRUE, TRUE, FALSE)
+```
+
 
 ## Manipulating Data: Vectors (Modifying)
 
@@ -308,9 +401,9 @@ age <- c(25, 30, 47, 38, 29, 72, 22, 55)
 # Change the values at positions 3, 4, and 7 to zero
 age[c(3, 4, 7)] <- 0
 
-# Get all values that are less than 40 and set to zero
+# Get all values that are less than 40 and set to 100
 age <- c(25, 30, 47, 38, 29, 72, 22, 55)
-age[age < 40] <- 0
+age[age < 40] <- 100
 ```
 
 To add elements to the end (or middle/beginning), use `c()` or `append()`
@@ -364,7 +457,8 @@ A `data.frame` is used to store and analyze rectangular data
     - `data.table`: Improved efficiency to manipulate large data sets
     
   - All of the functions used to read data so far end up creating data frames!
-  - For the rest of this discussion, we will use the `tibble` form produced by `readr`
+  - For the rest of this tutorial, we will use the `tibble` form produced by `readr`
+      - This form is already available to use as a variable called `dbts_df`
   
 *By definition, data frames are just a list of equal-length vectors*
 
@@ -396,41 +490,41 @@ Three primary ways to access subsets of a `data.frame`
 
 1) By providing row number(s) and/or column number(s)
     - `mydf[c(3, 5, ...), c(1, 4, ...)]`
+    - If rows/columns not specified, R returns ALL rows/columns by default
+        - `mydf[, c(1, 4)]` returns all rows from columns 1 and 4
+
+```{r data-frames2, exercise = TRUE, exercise.lines=5}
+# Return the rows 2, 5, and 10 and only the 3rd column
+dbts_df[c(2, 5, 10), 3]
+
+# Exerercise: Get all columns except 2 and rows 1 - 10
+```
   
+## Manipulating Data: Data Frames (Accessing)  
+
 2) By providing row names(s) and/or column name(s)
     - `mydf[c("row1", "row2"), "mycol1"]`
     - To access a single column, can use
         - `mydf$column_name`, returns vector
         - `mydf[['column_name']]`, returns vector
         - `mydf['column_name']`, returns data frame
-  
-3) By logical subsetting
-    - `mydf[c(TRUE, FALSE, ...), c(FALSE, TRUE, ...)]`
-    - Example: Get all rows where the person is at least 50 years old
-
-- If rows/columns not specified, R returns ALL rows/columns by default
-    - `mydf[, c(1, 4)]` returns all rows from columns 1 and 4
-
-## Manipulating Data: Data Frames (Accessing)
-
-**Get data by row/column position**
-
-```{r data-frames2, exercise = TRUE, exercise.lines=5}
-# Return the rows 2, 5, and 10 and only the 3rd column
-dbts_df[c(2, 5, 10), 3]
-```
-
-**Get data by row/column name**
-
-```{r data-frames3, exercise = TRUE, exercise.lines=5}
+ 
+```{r data-frames3, exercise = TRUE, exercise.lines=10}
 # Return all rows from the glucose and diabetes variables
 dbts_df[, c("glucose", "diabetes")]
 
 # Return only the diabetes variable using $
 dbts_df$diabetes
+
+# Exercise: Return all even rows from 1 - 10 and the "age" and "insulin columns"
+
 ```
 
-**Get data by logical vectors**
+## Manipulating Data: Data Frames (Accessing)  
+
+3) By logical subsetting
+    - `mydf[c(TRUE, FALSE, ...), c(FALSE, TRUE, ...)]`
+    - Example: Get all rows where the person is at least 50 years old
 
 ```{r data-frames4, exercise = TRUE, exercise.lines=20}
 ### Return all rows where age > 40 and diabetes is "pos" ###
@@ -449,41 +543,6 @@ dbts_df[over40_diabetic, ]
 
 # Same results in one line
 dbts_df[dbts_df$age > 40 & dbts_df$diabetes == "pos", ]
-```
-
-## Logical Operators
-
-- <, >, <=, >=
-- == (equal)
-- != (not equal)
-- || (OR), 
-- \| (OR, vectorized, element-wise)
-- && (AND), 
-- & (AND, vectorized, element-wise)
-
-```{r logical-operators, exercise=TRUE}
-# Create two numeric variables, x and y, assign them values
-x <- 3
-y <- 7
-# Create two Boolean variables, t and f, assign them values
-t <- TRUE
-f <- FALSE
-# Compare numeric values using logic statements
-y > x
-y == x
-# Compare &&, ||
-t && f
-t || f
-```
-
-**Compare && and || to & and |**
-
-- && and || return scalar value using only 1st element of each object being compared
-- & and | return logical vector
-
-```{r logical-vector, exercise = TRUE}
-c(TRUE, FALSE, TRUE) && c(TRUE, TRUE, FALSE)
-c(TRUE, FALSE, TRUE) & c(TRUE, TRUE, FALSE)
 ```
 
 ## Manipulating Data: Data Frames (Modifying)
@@ -510,7 +569,7 @@ dbts_df$is_diabetic <- NULL
 
 ## An aside: dplyr, readr, ..., the Tidyverse
 
-The Tidyverse is a set of R packages intended to make data manipulation and analysis
+Tidyverse a set of R packages intended to make data analysis easier
 
 `readr`, `readxl`, `haven`
 
@@ -524,9 +583,7 @@ The Tidyverse is a set of R packages intended to make data manipulation and anal
 
 `tibble`
 
-- An improved `data.frame` that you have already been using through this section
-
-
+- An improved `data.frame` that you have already been using
 
 # Summarizing Data in R
 
@@ -534,12 +591,8 @@ The Tidyverse is a set of R packages intended to make data manipulation and anal
 
 **For categorical variables:**
 
-- Summary statistics
-    - Frequency counts 
-    - Proportions
-    
-- Plots
-    - Bar chart
+- Summary statistics: Frequency counts, Proportions
+- Plots: Bar charts
 
 **For continuous variables:**
 
@@ -549,25 +602,28 @@ The Tidyverse is a set of R packages intended to make data manipulation and anal
     - Quantiles/percentiles (min, max, 25% , 50% (median), etc..)
     
 - Plots
-    - Histogram
+    - Histograms
+    - Density Plots
     - Boxplot (+ individual points)
 
 ## An Aside: The ggplot2 package
 
-For the plots in this tutorial, we will be using the popular R package `ggplot2`
+For the plots, we will use the R package `ggplot2`
 
-Base R does contain plot functions, but....
+Base R contains plot functions, but....
 
 - `ggplot2` allows for quick creation of visually appealing plots (they look nice)
 - "Easy" to use interface with lots of customization
 
-Every ggplot starts with `ggplot(data, aes(x=, y=, ...))` to define
+Every ggplot starts with `ggplot(data, aes(x=, y=, ...))` to define:
 
-- What `data` to use
-- Which variables in `data` to use and how they will be used
-- ggplot allows for us to add to the plot in 'layers'
-    - `ggplot(...) + geom_point(...) + labs(...) + ...`
-    - We don't have to specify the details all in one function
+- `data`
+- `aes()`: which variables to use and how
+
+ggplot allows for us to add to the plot in 'layers'
+
+- `ggplot(...) + geom_point(...) + labs(...) + ...`
+- We don't have to specify the details all in one function
 
 ## Summarizing Data: Categorical Variables
 
@@ -577,7 +633,7 @@ Every ggplot starts with `ggplot(data, aes(x=, y=, ...))` to define
 
 `prop.table()` can be used to obtain proportions
 
-```{r cat-desc, exercise = TRUE, exercise.lines=10}
+```{r cat-desc, exercise = TRUE, exercise.lines=12}
 # Find counts of diabetic / non-diabetic
 diabetic_counts <- table(dbts_df$diabetes)
 diabetic_counts
@@ -585,6 +641,11 @@ diabetic_counts
 # Get proportions from counts
 diabetic_prop <- prop.table(diabetic_counts)
 diabetic_prop
+
+# Both diabetic_counts and diabetic_prop kind of look like vectors
+# Get counts and propotion for the "pos" group using []?
+
+
 ```
 
 ## Summarizing Data in R: Categorical Variables
@@ -633,13 +694,17 @@ summary(dbts_df$glucose)
 ## Summarizing Data: Continuous Variables
 
 - `geom_histogram()` is used to generate a histogram
+- `geom_density()` is used to generate a density plot
 - `geom_boxplot()` is used to generate a boxplot
-    - Using `y=` creates a vertical boxplot, `x=` creates a horizontal boxplot
+    - Using `y=` creates a vertical boxplot
     - We can overlay data points on boxplot with `geom_jitter()`
     
 ```{r cont-plot, exercise = TRUE, exercise.lines=10}
 # Histogram of glucose
-ggplot(dbts_df, aes(x = glucose)) + geom_histogram(binwidth = 10)
+ggplot(dbts_df, aes(x = glucose)) + geom_histogram(binwidth = 5)
+
+# Histogram of glucose
+ggplot(dbts_df, aes(x = glucose)) + geom_density()
 
 # Boxplot of glucose
 ggplot(dbts_df, aes(y = glucose)) + geom_boxplot()
@@ -647,6 +712,53 @@ ggplot(dbts_df, aes(y = glucose)) + geom_boxplot()
 # Boxplot of glucose + data points
 ggplot(dbts_df, aes(x = factor(0), y = glucose)) + geom_boxplot() + 
   geom_jitter(shape = 16, position = position_jitter(0.2), alpha = .3)
+```
+
+```{r cont-plot2, exercise = TRUE, exercise.lines=8}
+# Create a couple plots for other variables, notice anything?
+# Hint: Do any values look unusual?
+
+```
+
+## Summarizing Data: Missing Values
+
+Data collection is never perfect and you are bound to have bad or missing values
+
+- Summary statistics and plots can help capture abnormal measures
+
+But how do we represent missing values in R?
+
+- `NA` is used to represent values that are missing in R
+- `is.na()` returns a logical vector indicating where NA's are
+
+```{r missing-values, exercise = TRUE, exercise.lines=10}
+im_missing_something <- c(1, 3, 5, NA, 9, NA, 13)
+
+# Do any any values contain an NA?
+is.na(im_missing_something)
+
+# At which indices (i.e. positions) are there NA's
+which(is.na(im_missing_something))
+
+# How many values contain an NA?
+sum(is.na(im_missing_something))
+```
+
+## Summarizing Data: Missing Values
+
+It looks like the zeros in the diabetes data set may actually be missing values
+
+- If we are confident these are true zeros, we could change to `NA`
+
+How many potential missing values do we have in each variable?
+
+```{r missing-values2, exercise = TRUE, exercise.lines=10}
+# How many zeros are in each column, excluding pregnant and diabetes
+colSums(dbts_df[, -c(1, 9)] == 0)
+
+# Exercise: What are the row numbers (positions) 
+# have a zero value for insulin?
+
 ```
 
 ## Summarizing Data: Bivariate Analyses
@@ -672,11 +784,14 @@ The correlation between two variables can be found with the `cor()` function
 
 ```{r corr, exercise = TRUE, exercise.lines=3}
 cor(dbts_df$glucose, dbts_df$insulin)
+
+# Try running the command cor(dbts_df), what happens?
+
 ```
 
 `corrplot()` from the package R *corrplot* makes it easy to visualize the correlation between all variables 
 
-```{r corr2, exercise = TRUE, exercise.lines=3}
+```{r corr2, exercise = TRUE, exercise.lines=5}
 corrplot(cor(dbts_df[, -9]), type = "lower")
 ```
 
@@ -684,21 +799,30 @@ corrplot(cor(dbts_df[, -9]), type = "lower")
 
 `geom_point()` creates a scatterplot between two continuous variables
 
-```{r scatter-plot, exercise = TRUE, exercise.lines=3}
-ggplot(dbts_df, aes(x = glucose, y = insulin)) + geom_point()
+```{r scatter-plot, exercise = TRUE, exercise.lines=6}
+dbts_nozero <- dbts_df[dbts_df$insulin != 0 & dbts_df$glucose != 0, ]
+
+ggplot(dbts_nozero, aes(x = glucose, y = insulin)) + 
+  geom_point()
 ```
 
 A trend line can be added by using `geom_smooth()`
 
-```{r scatter-plot2, exercise = TRUE, exercise.lines=3}
+```{r scatter-plot2, exercise = TRUE, exercise.lines=6}
+dbts_nozero <- dbts_df[dbts_df$insulin != 0 & dbts_df$glucose != 0, ]
+
 # Scatterplot with Linear Trend
-ggplot(dbts_df, aes(x = glucose, y = insulin)) + geom_point() +
+ggplot(dbts_nozero, aes(x = glucose, y = insulin)) + 
+  geom_point() +
   geom_smooth(method = "lm")
 ```
 
-```{r scatter-plot3, exercise = TRUE, exercise.lines=3}
+```{r scatter-plot3, exercise = TRUE, exercise.lines=6}
+dbts_nozero <- dbts_df[dbts_df$insulin != 0 & dbts_df$glucose != 0, ]
+
 # Scatterplot with LOESS
-ggplot(dbts_df, aes(x = glucose, y = insulin)) + geom_point() +
+ggplot(dbts_nozero, aes(x = glucose, y = insulin)) + 
+  geom_point() +
   geom_smooth(method = "loess")
 ```
 
@@ -749,7 +873,7 @@ table(high_glucose, dbts_df$diabetes)
 # Dichotomize glucose at 126
 high_glucose <- ifelse(dbts_df$glucose >= 126, ">= 126", "< 126")
 
-# Contingency table of age vs diabetes
+# Proportion table of age vs diabetes
 prop.table(table(high_glucose, dbts_df$diabetes))
 ```
 
@@ -763,15 +887,13 @@ high_glucose <- ifelse(dbts_df$glucose >= 126, ">= 126", "< 126")
 prop.table(table(high_glucose, dbts_df$diabetes), margin = 2)
 
 # Make sure we are getting the right answer
-sensitivity <- 176 / (176 + 92)
-specificity <- 379 / (379 + 121)
+c(sensititity = 176 / (176 + 92), specificity = 379 / (379 + 121))
 
 # Compute positive predictive value and negative predictive value
 prop.table(table(high_glucose, dbts_df$diabetes), margin = 1)
 
 # Make sure we are getting the right answer
-ppv <- 176 / (176 + 121)
-npv <- 379 / (379 + 92)
+c(ppv = 176 / (176 + 121), npv = 379 / (379 + 92))
 ```
 
 # Hypothesis Testing in R
@@ -900,18 +1022,21 @@ Let's focus on the type of object returned by `t.test()`...a **List**
 
 Lists are 'generic' vectors that can be composed of different R objects.
 
-- A `data.frame` is a List object composed of vectors
+- A `data.frame` is list object composed of vectors
   
 Investigate the object returned by `t.test()`:
 
-```{r ttest-glucose2, exercise = TRUE, exercise.lines=22}
+```{r ttest-glucose2, exercise = TRUE, exercise.lines=5}
 # 2-sample t-test for glucose by diabetes status
 result <- t.test(glucose ~ diabetes, data = dbts_df)
 
 # What is the structure of result
 str(result)
+```
 
-# Accessing elements in a list is the same as getting columns in a data.frame
+Accessing elements in a list is similar to getting columns in a data.frame
+
+```{r ttest-glucose3, exercise = TRUE, exercise.lines=22}
 
 # Using the lst$element_name
 result$statistic
@@ -943,7 +1068,7 @@ $$\chi^2=\sum \frac{(O-E)^2}{E}$$
 
 - Below, we look at `high glucose` vs. `diabetes status`
     
-```{r chisq-test, exercise = TRUE, exercise.lines=16}
+```{r chisq-test, exercise = TRUE, exercise.lines=18}
 # Chi-Square test for high glucose and diabetes status
 high_glucose <- dbts_df$glucose > 126
 chisq.test(high_glucose, dbts_df$diabetes)
@@ -958,6 +1083,9 @@ expected <- chisq_result$expected
 # What type of data structures are observed and expected?
 class(observed)
 class(expected)
+
+# A challenge to try later, can you use observed and expected to compute the chi-sq?
+
 ```
 
 ## Hypothesis Testing: Linear Regression
@@ -973,10 +1101,19 @@ $$\epsilon \sim N(0, \sigma^2)$$
   - As with `t.test()`, the model can be specified two different ways
   - `lm(y ~ x1 + x2 + ..., data = dat)`
   - `lm(y = y, x = x)`, `x` must be a Matrix
+  - `summary()` can be used to view results of regression
   
+```{r lm-glucose, exercise = TRUE, exercise.lines=5}
+# Fit linear regression model of glucose on diabetes status
+result_lm <- lm(glucose ~ diabetes, data = dbts_df)
+
+# View results of regression with summary() function
+summary(result_lm)
+```
+
 Let's show that `lm()` and `t.test()` can lead to the same results:
 
-```{r lm-glucose, exercise = TRUE, exercise.lines=5}
+```{r lm-glucose2, exercise = TRUE, exercise.lines=15}
 # 2-sample t-test for glucose by diabetes status
 result_ttest <- t.test(
   glucose ~ diabetes, 
@@ -987,9 +1124,6 @@ result_ttest <- t.test(
 # Fit linear regression model of glucose on diabetes status
 result_lm <- lm(glucose ~ diabetes, data = dbts_df)
 
-# View results of regression with summary() function
-summary(result_lm)
-
 # Get test statistic for t-test
 teststat_ttest <- result_ttest$statistic
 
@@ -997,7 +1131,11 @@ teststat_ttest <- result_ttest$statistic
 teststat_lm <- summary(result_lm)$coefficients[2, 3]
 
 # Are they the same?
-all.equal(abs(teststat_ttest), abs(teststat_lm), check.attributes = FALSE)
+all.equal(
+  abs(teststat_ttest), 
+  abs(teststat_lm), 
+  check.attributes = FALSE
+)
 ```
 
 ## Hypothesis Testing: Linear Regression
@@ -1012,7 +1150,7 @@ The object returned by `lm()` can be used with the following functions:
   - `predict()` to use the model make predictions on a new set of data
   - `plot()` plots to assess model fit and assumptions
 
-```{r lm-glucose2, exercise = TRUE, exercise.lines=35}
+```{r lm-glucose3, exercise = TRUE, exercise.lines=7}
 # Fit linear regression model of glucose on diabetes status
 result_lm <- lm(glucose ~ diabetes, data = dbts_df)
 
@@ -1020,7 +1158,7 @@ result_lm <- lm(glucose ~ diabetes, data = dbts_df)
 plot(result_lm)
 ```
 
-```{r lm-glucose3, exercise = TRUE, exercise.lines=35}
+```{r lm-glucose4, exercise = TRUE, exercise.lines=30}
 # Fit linear regression model of glucose on diabetes status
 result_lm <- lm(glucose ~ diabetes, data = dbts_df)
 
@@ -1058,3 +1196,11 @@ In this tutorial, you learned how to:
   - Manipulate data in various froms
   - Compute summary statistics and generate plots to visualize your data
   - Conduct statistical analyses and use the results returned
+
+## Fin
+
+<center>
+
+![](IntroToR_files/images/thanks_dog_R.gif)
+
+</center>
