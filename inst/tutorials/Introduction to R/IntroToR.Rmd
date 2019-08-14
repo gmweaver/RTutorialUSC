@@ -139,7 +139,7 @@ read.csv(file, header = TRUE, sep = ",", quote = "\"",
 
 - **Value**: describes what the function returns
 
-- **Examples**: self-containted snippets of R code to test using the function
+- **Examples**: self-contained snippets of R code to test using the function
 
 ## Reading Data: Loading Other File Types into R
 
@@ -338,7 +338,7 @@ age <- c(25, 30, 47, 38, 29, 72, 22, 55)
 
 # Determine what values are less than 40
 is_lt_40 <- age < 40
-is_ls_40
+is_lt_40
 
 # Get values that are less than 40
 
@@ -1037,6 +1037,7 @@ str(result)
 Accessing elements in a list is similar to getting columns in a data.frame
 
 ```{r ttest-glucose3, exercise = TRUE, exercise.lines=22}
+result <- t.test(glucose ~ diabetes, data = dbts_df)
 
 # Using the lst$element_name
 result$statistic
@@ -1193,7 +1194,7 @@ ggplot(model_results, aes(x = fitted, y = resids)) +
 In this tutorial, you learned how to:
 
   - Read data from various data sources
-  - Manipulate data in various froms
+  - Manipulate data in various forms
   - Compute summary statistics and generate plots to visualize your data
   - Conduct statistical analyses and use the results returned
 
