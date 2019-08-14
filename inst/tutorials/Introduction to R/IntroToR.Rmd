@@ -139,7 +139,7 @@ read.csv(file, header = TRUE, sep = ",", quote = "\"",
 
 - **Value**: describes what the function returns
 
-- **Examples**: self-containted snippets of R code to test using the function
+- **Examples**: self-contained snippets of R code to test using the function
 
 ## Reading Data: Loading Other File Types into R
 
@@ -1194,7 +1194,7 @@ ggplot(model_results, aes(x = fitted, y = resids)) +
 In this tutorial, you learned how to:
 
   - Read data from various data sources
-  - Manipulate data in various froms
+  - Manipulate data in various forms
   - Compute summary statistics and generate plots to visualize your data
   - Conduct statistical analyses and use the results returned
 
