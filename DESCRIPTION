@@ -1,10 +1,10 @@
 Package: RTutorialUSC
 Type: Package
 Title: A Short Introduction to Data Analysis in R
-Version: 0.1.1
+Version: 0.1.3
 Author: Garrett Weaver
 Maintainer: Garrett Weaver <gmweaver@usc.edu>
-Description: A basic walkthrough reading, manipulating, summarizing, and hypothesis testing in R
+Description: A basic tutorial on reading, manipulating, summarizing, and hypothesis testing in R
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
