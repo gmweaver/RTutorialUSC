@@ -338,7 +338,7 @@ age <- c(25, 30, 47, 38, 29, 72, 22, 55)
 
 # Determine what values are less than 40
 is_lt_40 <- age < 40
-is_ls_40
+is_lt_40
 
 # Get values that are less than 40
 
@@ -1037,6 +1037,7 @@ str(result)
 Accessing elements in a list is similar to getting columns in a data.frame
 
 ```{r ttest-glucose3, exercise = TRUE, exercise.lines=22}
+result <- t.test(glucose ~ diabetes, data = dbts_df)
 
 # Using the lst$element_name
 result$statistic
